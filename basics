@@ -1,0 +1,27 @@
+Use the ping module to ping all the nodes in your inventory:
+$ ansible all -m ping
+
+Now run a live command on all of your nodes:
+ansible all -a "/bin/echo hello"
+
+
+You should see output for each host in your inventory, similar to this:
+aserver.example.org | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+
+
+ansible all -m ping -u ubuntu
+172.31.40.161 | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+
+
+
+The default location for inventory is a file called /etc/ansible/hosts
+
