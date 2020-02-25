@@ -96,7 +96,7 @@ The default location for inventory is a file called /etc/ansible/hosts
   - name: Modify configuration file to setup server ID
     lineinfile: dest=/etc/mysql/my.cnf regexp="^#server-id" line="server-id=2"
   - name: Setup replication
-    command: /usr/bin/mysql -uroot -e "CHANGE MASTER TO master_host='ip-172-31-47-161', master_user='repl', master_password='lper', master_use_gtid=current_pos"
+    command: /usr/bin/mysql -uroot -e "CHANGE MASTER TO master_host='ip-172-31-10-76', master_user='repl', master_password='lper', master_use_gtid=current_pos"
   - name: Restart mysql service
     service: name=mysql state=restarted
   become: true
