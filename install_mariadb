@@ -1,0 +1,13 @@
+# file: mariadb.yml
+- hosts: target3  #aws instance ubuntu 16.04
+  tasks:
+  - name: Install MariaDB repository
+    apt_repository: repo='deb [arch=amd64,arm64,i386,ppc64el] http://mirror.host.ag/mariadb/repo/10.3/ubuntu xenial main' state=present
+  - name: Add repository key to the system
+    apt_key: keyserver=keyserver.ubuntu.com id=0xF1656F24C74CD1D8
+  - name: Install MariaDB Server
+    apt: name=mariadb-server state=latest
+  become: true
+
+
+ansible-playbook mariadb.yml
