@@ -1,0 +1,106 @@
+#ssh connectivity 
+
+
+Create new keys
+On each server run:
+
+ssh-keygen
+
+Hit enter enter enter. You'll have two files:
+
+.ssh/id_rsa
+.ssh/id_rsa.pub
+
+
+
+On Server A, cat and copy to clipboard the public key:
+cat ~/.ssh/id_rsa.pub
+[select and copy to your clipboard]
+
+
+
+ssh into Server B, and append the contents of that to the it's authorized_keys file:
+cat >> ~/.ssh/authorized_keys
+[paste your clipboard contents]
+[ctrl+d to exit]
+
+
+
+Now ssh from server A:
+ssh -i ~/.ssh/id_rsa private.ip.of.other.server
+
+
+
+#/etc/ansible/hosts
+master ansible_host=ip-172-31-10-76
+slave ansible_host=ip-172-31-0-185
+
+
+#test ssh connectivity with ansible
+
+Use the ping module to ping all the nodes in your inventory:
+
+$ ansible all -m ping
+
+
+You should see output for each host in your inventory, similar to this:
+
+aserver.example.org | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+
+
+ansible all -m ping -u ubuntu
+172.31.40.161 | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+
+
+The default location for inventory is a file called /etc/ansible/hosts
+
+
+#mariadb.yml
+- hosts: master:slave
+  tasks:
+  - name: Install MariaDB repository
+    apt_repository: repo='deb [arch=amd64,arm64,i386,ppc64el] http://mirror.host.ag/mariadb/repo/10.3/ubuntu xenial main' state=present
+  - name: Add repository key to the system
+    apt_key: keyserver=keyserver.ubuntu.com id=0xF1656F24C74CD1D8
+  - name: Install MariaDB Server
+    apt: name=mariadb-server state=latest
+  - name: Install python module
+    apt: name=python-mysqldb
+  - name: Create replication account
+    mysql_user: name=repl host="%" password=lper priv="*.*:REPLICATION SLAVE" state=present
+  - name: Create readwrite user
+    mysql_user: name=rwuser host="%" password=adminpwd priv=*.*:SELECT,INSERT,UPDATE,DELETE,CREATE,DROP state=present
+  - name: Modify configuration file to listen on all interfaces
+    lineinfile: dest=/etc/mysql/my.cnf regexp="^bind-address" line="bind-address=0.0.0.0"
+  become: true
+- hosts: master
+  tasks:
+  - name: Modify configuration file to setup server ID
+    lineinfile: dest=/etc/mysql/my.cnf regexp="^#server-id" line="server-id=1"
+  - name: Restart mysql service
+    service: name=mysql state=restarted
+  - name: Reset master binlog
+    command: /usr/bin/mysql -u root -e "RESET MASTER"
+  become: true
+- hosts: slave
+  tasks:
+  - name: Modify configuration file to setup server ID
+    lineinfile: dest=/etc/mysql/my.cnf regexp="^#server-id" line="server-id=2"
+  - name: Setup replication
+    command: /usr/bin/mysql -uroot -e "CHANGE MASTER TO master_host='ip-172-31-47-161', master_user='repl', master_password='lper', master_use_gtid=current_pos"
+  - name: Restart mysql service
+    service: name=mysql state=restarted
+  become: true
+
+
+
+
